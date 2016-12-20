@@ -34,7 +34,6 @@ type KinesisEvent struct {
 }
 
 var (
-	ch         chan []byte
 	ksv        *kinesis.Kinesis
 	streamName *string
 	matcher    *regexp.Regexp
