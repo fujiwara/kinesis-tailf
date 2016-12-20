@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"regexp"
 
@@ -46,40 +47,53 @@ func init() {
 }
 
 func main() {
-	apex.HandleFunc(func(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
-		var e KinesisEvent
-		if err := json.Unmarshal(event, &e); err != nil {
-			return nil, err
-		}
-		if len(e.Records) == 0 {
-			return nil, nil
-		}
+	apex.HandleFunc(proceess)
+}
 
-		result := make([]byte, 4096)
-		for _, record := range e.Records {
-			data := record.Kinesis.Data
-			rs, err := ktail.UnmarshalRecords(data)
-			if err != nil {
-				if matcher.Match(data) {
-					result = append(result, data...)
-					result = append(result, ktail.LF...)
-				}
-				continue
+func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
+	var e KinesisEvent
+	if err := json.Unmarshal(event, &e); err != nil {
+		return nil, err
+	}
+	if len(e.Records) == 0 {
+		return nil, nil
+	}
+
+	result := make([]byte, 4096)
+	count := 0
+	match := 0
+	for _, record := range e.Records {
+		data := record.Kinesis.Data
+		rs, err := ktail.UnmarshalRecords(data)
+		if err != nil {
+			count++
+			if matcher.Match(data) {
+				match++
+				result = append(result, data...)
+				result = append(result, ktail.LF...)
 			}
-			for _, r := range rs {
-				if matcher.Match(r.Data) {
-					result = append(result, r.Data...)
-					result = append(result, ktail.LF...)
-				}
+			continue
+		}
+		for _, r := range rs {
+			count++
+			if matcher.Match(r.Data) {
+				match++
+				result = append(result, r.Data...)
+				result = append(result, ktail.LF...)
 			}
 		}
-		if len(result) == 0 {
-			return nil, nil
-		}
-		return ksv.PutRecord(&kinesis.PutRecordInput{
-			Data:         result,
-			PartitionKey: aws.String(e.Records[0].Kinesis.PartitionKey),
-			StreamName:   streamName,
-		})
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	log.Printf("records: event: %d processed: %d match: %d",
+		len(e.Records),
+		count,
+		match,
+	)
+	return ksv.PutRecord(&kinesis.PutRecordInput{
+		Data:         result,
+		PartitionKey: aws.String(e.Records[0].Kinesis.PartitionKey),
+		StreamName:   streamName,
 	})
 }
