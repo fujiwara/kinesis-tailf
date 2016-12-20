@@ -1,6 +1,6 @@
-# kinesis-tail
+# kinesis-tailf
 
-tail command for AWS Kinesis.
+tail -f command for AWS Kinesis.
 
 ## Install
 
@@ -22,7 +22,7 @@ Usage of kinesis-tail:
     	stream name
 ```
 
-kinesis-tail supports decoding packed records by Kinesis Producer Library.
+kinesis-tailf supports decoding packed records by Kinesis Producer Library.
 
 ## Licence
 
