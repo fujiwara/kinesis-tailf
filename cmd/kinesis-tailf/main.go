@@ -12,13 +12,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 
-	ktail "github.com/fujiwara/kinesis-tail"
+	ktail "github.com/fujiwara/kinesis-tailf"
 )
 
 var (
 	streamName = ""
 	appendLF   = false
-	LF         = []byte{'\n'}
 )
 
 func main() {
@@ -74,7 +73,7 @@ func writer(ch chan []byte) {
 		b := <-ch
 		w.Write(b)
 		if appendLF {
-			w.Write(LF)
+			w.Write(ktail.LF)
 		}
 		w.Flush()
 	}

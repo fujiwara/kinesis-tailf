@@ -5,7 +5,7 @@ tail command for AWS Kinesis.
 ## Install
 
 ```
-go get -u github.com/fujiwara/kinesis-tail
+go get -u github.com/fujiwara/kinesis-tailf/cmd/kinesis-tailf
 ```
 
 ## Usage

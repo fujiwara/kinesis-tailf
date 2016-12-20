@@ -1,0 +1,12 @@
+{
+  "name": "kinesis-grep",
+  "description": "",
+  "memory": 128,
+  "language": "go",
+  "timeout": 5,
+  "role": "<YOUR ARN>",
+  "environment": {
+    "MATCH": ".",
+    "STREAM_NAME": "<YOUR STREAM NAME>"
+  }
+}
