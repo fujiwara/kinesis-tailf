@@ -1,6 +1,6 @@
 # kinesis-tailf
 
-tail -f command for AWS Kinesis.
+tail -f command for Amazon Kinesis.
 
 ## Install
 
@@ -15,9 +15,9 @@ Requires `AWS_REGION` environment variable.
 ```
 Usage of kinesis-tail:
   -lf
-    	append LF(\n) to each record
+    	append LF(\n) to each record data
   -shard-id string
-    	shard id (, separated)
+    	shard ids (, separated)
   -stream string
     	stream name
 ```
