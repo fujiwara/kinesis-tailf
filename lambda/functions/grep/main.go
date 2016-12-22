@@ -85,7 +85,7 @@ func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
 			count++
 			if matcher.Match(r.Data) {
 				match++
-				result, err = push(result, data)
+				result, err = push(result, r.Data)
 				if err != nil {
 					return nil, err
 				}
