@@ -56,7 +56,6 @@ func Iterate(k *kinesis.Kinesis, streamName, shardId string, ch chan []byte) err
 			time.Sleep(Interval)
 		}
 	}
-	return nil
 }
 
 func UnmarshalRecords(raw []byte) ([]*kpl.Record, error) {
