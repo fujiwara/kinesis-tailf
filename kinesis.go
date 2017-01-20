@@ -1,24 +1,17 @@
 package ktail
 
 import (
-	"bytes"
-	"crypto/md5"
-	"errors"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 
 	"github.com/fujiwara/kinesis-tailf/kpl"
-	"github.com/golang/protobuf/proto"
 )
 
 var (
-	PackedHeader       = []byte{0xF3, 0x89, 0x9A, 0xC2}
-	PackedHeaderLength = len(PackedHeader)
-	PackedFooterLength = md5.Size
-	Interval           = time.Second
-	LF                 = []byte{'\n'}
+	Interval = time.Second
+	LF       = []byte{'\n'}
 )
 
 //go:generate protoc --go_out=plugins=kpl:kpl ./kpl.proto
@@ -43,9 +36,9 @@ func Iterate(k *kinesis.Kinesis, streamName, shardId string, ch chan []byte) err
 		}
 		itr = rr.NextShardIterator
 		for _, record := range rr.Records {
-			rs, err := UnmarshalRecords(record.Data)
+			ar, err := kpl.Unmarshal(record.Data)
 			if err == nil {
-				for _, r := range rs {
+				for _, r := range ar.Records {
 					ch <- r.Data
 				}
 			} else {
@@ -56,16 +49,4 @@ func Iterate(k *kinesis.Kinesis, streamName, shardId string, ch chan []byte) err
 			time.Sleep(Interval)
 		}
 	}
-}
-
-func UnmarshalRecords(raw []byte) ([]*kpl.Record, error) {
-	if bytes.HasPrefix(raw, PackedHeader) {
-		var ar kpl.AggregatedRecord
-		err := proto.Unmarshal(raw[PackedHeaderLength:len(raw)-PackedFooterLength], &ar)
-		if err != nil {
-			return nil, err
-		}
-		return ar.Records, nil
-	}
-	return nil, errors.New("not_marshaled_data")
 }

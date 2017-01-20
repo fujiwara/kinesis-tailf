@@ -1,3 +1,5 @@
+// https://github.com/awslabs/amazon-kinesis-producer/blob/master/aggregation-format.md
+
 syntax = "proto2";
 
 message AggregatedRecord {
