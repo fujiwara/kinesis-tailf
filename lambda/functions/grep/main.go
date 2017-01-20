@@ -8,12 +8,11 @@ import (
 	"os"
 	"regexp"
 
-	ktail "github.com/fujiwara/kinesis-tailf"
-
 	"github.com/apex/go-apex"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/fujiwara/kinesis-tailf/kpl"
 )
 
 const MaxMessageSize = 64 * 1024
@@ -69,7 +68,7 @@ func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
 	match := 0
 	for _, record := range e.Records {
 		data := record.Kinesis.Data
-		rs, err := ktail.UnmarshalRecords(data)
+		ar, err := kpl.Unmarshal(data)
 		if err != nil {
 			count++
 			if matcher.Match(data) {
@@ -81,7 +80,7 @@ func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
 			}
 			continue
 		}
-		for _, r := range rs {
+		for _, r := range ar.Records {
 			count++
 			if matcher.Match(r.Data) {
 				match++
