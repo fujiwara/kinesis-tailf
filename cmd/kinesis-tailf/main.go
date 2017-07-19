@@ -18,7 +18,7 @@ import (
 var (
 	streamName = ""
 	appendLF   = false
-	region     = "ap-northeast-1"
+	region     = ""
 )
 
 func main() {
@@ -27,14 +27,19 @@ func main() {
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
 	flag.StringVar(&shardId, "shard-id", "", "shard id (, separated)")
-	flag.StringVar(&region, "region", region, "region")
+	flag.StringVar(&region, "region", "", "region")
 	flag.Parse()
 
-	k := kinesis.New(
-		session.New(
+	var sess *session.Session
+	if region != "" {
+		sess = session.New(
 			&aws.Config{Region: aws.String(region)},
-		),
-	)
+		)
+	} else {
+		sess = session.New()
+	}
+
+	k := kinesis.New(sess)
 	sd, err := k.DescribeStream(&kinesis.DescribeStreamInput{
 		StreamName: aws.String(streamName),
 	})
