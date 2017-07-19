@@ -13,13 +13,13 @@ var ar = &kpl.AggregatedRecord{
 	ExplicitHashKeyTable: []string{"foo", "bar"},
 	Records: []*kpl.Record{
 		&kpl.Record{
-			PartitionKeyIndex:    Uint64(1),
-			ExplicitHashKeyIndex: Uint64(2),
+			PartitionKeyIndex:    Uint64(0),
+			ExplicitHashKeyIndex: Uint64(1),
 			Data:                 []byte("data1"),
 		},
 		&kpl.Record{
-			PartitionKeyIndex:    Uint64(3),
-			ExplicitHashKeyIndex: Uint64(4),
+			PartitionKeyIndex:    Uint64(0),
+			ExplicitHashKeyIndex: Uint64(1),
 			Data:                 []byte("data2"),
 		},
 	},
