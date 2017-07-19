@@ -10,7 +10,10 @@ go get -u github.com/fujiwara/kinesis-tailf/cmd/kinesis-tailf
 
 ## Usage
 
-Requires `AWS_REGION` environment variable.
+Required flags are below.
+
+- `-stream`
+- `-region` or `AWS_REGION` environment variable
 
 ```
 Usage of kinesis-tailf:
@@ -24,7 +27,7 @@ Usage of kinesis-tailf:
     	stream name
 ```
 
-kinesis-tailf supports decoding packed records by Kinesis Producer Library.
+kinesis-tailf supports decoding packed records by Kinesis Producer Library (KPL).
 
 ## Licence
 
