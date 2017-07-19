@@ -13,11 +13,13 @@ go get -u github.com/fujiwara/kinesis-tailf/cmd/kinesis-tailf
 Requires `AWS_REGION` environment variable.
 
 ```
-Usage of kinesis-tail:
+Usage of kinesis-tailf:
   -lf
-    	append LF(\n) to each record data
+    	append LF(\n) to each record
+  -region string
+    	region
   -shard-id string
-    	shard ids (, separated)
+    	shard id (, separated)
   -stream string
     	stream name
 ```
