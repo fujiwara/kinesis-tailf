@@ -22,7 +22,7 @@ Usage of kinesis-tailf:
   -region string
     	region
   -shard-id string
-    	shard id (, separated)
+    	shard id (, separated) default: all shards in the stream.
   -stream string
     	stream name
 ```

@@ -26,7 +26,7 @@ func main() {
 	var shardId string
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
-	flag.StringVar(&shardId, "shard-id", "", "shard id (, separated)")
+	flag.StringVar(&shardId, "shard-id", "", "shard id (, separated) default: all shards in the stream.")
 	flag.StringVar(&region, "region", "", "region")
 	flag.Parse()
 
