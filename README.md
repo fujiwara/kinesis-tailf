@@ -25,6 +25,9 @@ Usage of kinesis-tailf:
     	shard id (, separated) default: all shards in the stream.
   -stream string
     	stream name
+  -timestamp string
+    	start timestamp.
+    	default LATEST
 ```
 
 kinesis-tailf supports decoding packed records by Kinesis Producer Library (KPL).

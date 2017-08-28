@@ -3,14 +3,17 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/tkuchiki/parsetime"
 
 	ktail "github.com/fujiwara/kinesis-tailf"
 )
@@ -23,12 +26,30 @@ var (
 
 func main() {
 	shardIds := make([]string, 0)
-	var shardId string
+	var shardId, timestamp string
+	var ts time.Time
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
 	flag.StringVar(&shardId, "shard-id", "", "shard id (, separated) default: all shards in the stream.")
 	flag.StringVar(&region, "region", "", "region")
+	flag.StringVar(&timestamp, "timestamp", "", "start timestamp")
 	flag.Parse()
+
+	if streamName == "" {
+		fmt.Fprintln(os.Stderr, "Usage of kinesis-tailf:")
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
+	if timestamp != "" {
+		var err error
+		p, _ := parsetime.NewParseTime()
+		ts, err = p.Parse(timestamp)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't parse timestamp. %s\n", err)
+			os.Exit(1)
+		}
+	}
 
 	var sess *session.Session
 	if region != "" {
@@ -62,7 +83,7 @@ func main() {
 	for _, id := range shardIds {
 		wg.Add(1)
 		go func(id string) {
-			err := ktail.Iterate(k, streamName, id, ch)
+			err := ktail.Iterate(k, streamName, id, ts, ch)
 			if err != nil {
 				log.Println(err)
 			}

@@ -16,12 +16,18 @@ var (
 
 //go:generate protoc --go_out=plugins=kpl:kpl ./kpl.proto
 
-func Iterate(k *kinesis.Kinesis, streamName, shardId string, ch chan []byte) error {
-	r, err := k.GetShardIterator(&kinesis.GetShardIteratorInput{
-		ShardId:           aws.String(shardId),
-		ShardIteratorType: aws.String("LATEST"),
-		StreamName:        aws.String(streamName),
-	})
+func Iterate(k *kinesis.Kinesis, streamName, shardId string, ts time.Time, ch chan []byte) error {
+	in := &kinesis.GetShardIteratorInput{
+		ShardId:    aws.String(shardId),
+		StreamName: aws.String(streamName),
+	}
+	if ts.IsZero() {
+		in.ShardIteratorType = aws.String("LATEST")
+	} else {
+		in.ShardIteratorType = aws.String("AT_TIMESTAMP")
+		in.Timestamp = &ts
+	}
+	r, err := k.GetShardIterator(in)
 	if err != nil {
 		return err
 	}
