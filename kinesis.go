@@ -14,19 +14,40 @@ var (
 	LF       = []byte{'\n'}
 )
 
+type IterateParams struct {
+	StreamName     string
+	ShardID        string
+	StartTimestamp time.Time
+	EndTimestamp   time.Time
+}
+
+type timeOverFunc func(time.Time) bool
+
 //go:generate protoc --go_out=plugins=kpl:kpl ./kpl.proto
 
-func Iterate(k *kinesis.Kinesis, streamName, shardId string, ts time.Time, ch chan []byte) error {
+func Iterate(k *kinesis.Kinesis, ch chan []byte, p IterateParams) error {
 	in := &kinesis.GetShardIteratorInput{
-		ShardId:    aws.String(shardId),
-		StreamName: aws.String(streamName),
+		ShardId:    aws.String(p.ShardID),
+		StreamName: aws.String(p.StreamName),
 	}
-	if ts.IsZero() {
+	if p.StartTimestamp.IsZero() {
 		in.ShardIteratorType = aws.String("LATEST")
 	} else {
 		in.ShardIteratorType = aws.String("AT_TIMESTAMP")
-		in.Timestamp = &ts
+		in.Timestamp = &(p.StartTimestamp)
 	}
+
+	var isTimeOver timeOverFunc
+	if p.EndTimestamp.IsZero() {
+		isTimeOver = func(t time.Time) bool {
+			return false
+		}
+	} else {
+		isTimeOver = func(t time.Time) bool {
+			return p.EndTimestamp.Before(t)
+		}
+	}
+
 	r, err := k.GetShardIterator(in)
 	if err != nil {
 		return err
@@ -42,6 +63,9 @@ func Iterate(k *kinesis.Kinesis, streamName, shardId string, ts time.Time, ch ch
 		}
 		itr = rr.NextShardIterator
 		for _, record := range rr.Records {
+			if isTimeOver(*record.ApproximateArrivalTimestamp) {
+				return nil
+			}
 			ar, err := kpl.Unmarshal(record.Data)
 			if err == nil {
 				for _, r := range ar.Records {
@@ -52,6 +76,9 @@ func Iterate(k *kinesis.Kinesis, streamName, shardId string, ts time.Time, ch ch
 			}
 		}
 		if len(rr.Records) == 0 {
+			if isTimeOver(time.Now()) {
+				return nil
+			}
 			time.Sleep(Interval)
 		}
 	}
