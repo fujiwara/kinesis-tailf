@@ -23,8 +23,8 @@ Usage of kinesis-tailf:
     	append LF(\n) to each record
   -region string
     	region (default AWS_REGION environment variable)
-  -shard-id string
-    	shard id (, separated) default: all shards in the stream.
+  -shard-key string
+    	shard key
   -start string
     	start timestamp
   -stream string
