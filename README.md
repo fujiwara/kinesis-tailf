@@ -17,17 +17,18 @@ Required flags are below.
 
 ```
 Usage of kinesis-tailf:
+  -end string
+    	end timestamp
   -lf
     	append LF(\n) to each record
   -region string
-    	region
+    	region (default AWS_REGION environment variable)
   -shard-id string
     	shard id (, separated) default: all shards in the stream.
+  -start string
+    	start timestamp
   -stream string
     	stream name
-  -timestamp string
-    	start timestamp.
-    	default LATEST
 ```
 
 kinesis-tailf supports decoding packed records by Kinesis Producer Library (KPL).
