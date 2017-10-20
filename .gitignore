@@ -33,3 +33,4 @@ _testmain.go
 # External packages folder
 vendor/
 
+cmd/kinesis-tailf/kinesis-tailf
