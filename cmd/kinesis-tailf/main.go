@@ -120,6 +120,7 @@ func _main() int {
 
 func writer(ctx context.Context, ch chan []byte, wg *sync.WaitGroup) {
 	defer wg.Done()
+	var mu sync.Mutex
 
 	w := bufio.NewWriter(os.Stdout)
 	defer w.Flush()
@@ -132,7 +133,9 @@ func writer(ctx context.Context, ch chan []byte, wg *sync.WaitGroup) {
 			case <-ctx.Done():
 				return
 			case <-c:
+				mu.Lock()
 				w.Flush()
+				mu.Unlock()
 			}
 		}
 	}()
@@ -142,10 +145,12 @@ func writer(ctx context.Context, ch chan []byte, wg *sync.WaitGroup) {
 		case <-ctx.Done():
 			return
 		case b := <-ch:
+			mu.Lock()
 			w.Write(b)
 			if appendLF {
 				w.Write(ktail.LF)
 			}
+			mu.Unlock()
 		}
 	}
 }
