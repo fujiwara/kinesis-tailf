@@ -62,9 +62,7 @@ func _main() error {
 	ctx := context.Background()
 	app := ktail.New(sess, streamName)
 	app.AppendLF = appendLF
-	app.Run(ctx, shardKey, startTs, endTs)
-
-	return nil
+	return app.Run(ctx, shardKey, startTs, endTs)
 }
 
 func parseTimestamp(s string) (time.Time, error) {
