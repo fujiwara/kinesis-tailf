@@ -4,9 +4,15 @@ tail -f command for Amazon Kinesis.
 
 ## Install
 
+### Homebrew
+
 ```
-go get -u github.com/fujiwara/kinesis-tailf/cmd/kinesis-tailf
+$ brew install fujiwara/tap/kinesis-tailf
 ```
+
+### Binary packages
+
+[Releases](https://github.com/fujiwara/kinesis-tailf/releases).
 
 ## Usage
 
