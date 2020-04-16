@@ -2,13 +2,12 @@ package main
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"regexp"
 
-	"github.com/apex/go-apex"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
@@ -51,16 +50,12 @@ func init() {
 }
 
 func main() {
-	apex.HandleFunc(proceess)
+	lambda.Start(proceess)
 }
 
-func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
-	var e KinesisEvent
-	if err := json.Unmarshal(event, &e); err != nil {
-		return nil, err
-	}
+func proceess(e KinesisEvent) error {
 	if len(e.Records) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	result := make([]byte, 0, BufferSize)
@@ -75,7 +70,7 @@ func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
 				match++
 				result, err = push(result, data)
 				if err != nil {
-					return nil, err
+					return err
 				}
 			}
 			continue
@@ -86,7 +81,7 @@ func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
 				match++
 				result, err = push(result, r.Data)
 				if err != nil {
-					return nil, err
+					return err
 				}
 			}
 		}
@@ -97,9 +92,9 @@ func proceess(event json.RawMessage, ctx *apex.Context) (interface{}, error) {
 		match,
 	)
 	if len(result) == 0 {
-		return nil, nil
+		return nil
 	}
-	return nil, flush(result)
+	return flush(result)
 }
 
 func push(b, a []byte) ([]byte, error) {
