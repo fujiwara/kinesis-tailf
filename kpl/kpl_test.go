@@ -38,7 +38,7 @@ func TestRoundTrip(t *testing.T) {
 	j1, _ := json.Marshal(ar)
 	j2, _ := json.Marshal(ar2)
 	if !bytes.Equal(j1, j2) {
-		t.Error("roudtrip failed %s %s", string(j1), string(j2))
+		t.Errorf("roudtrip failed %s %s", string(j1), string(j2))
 	}
 }
 
