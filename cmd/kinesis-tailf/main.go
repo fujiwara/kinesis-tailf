@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/mashiike/didumean"
 	"github.com/tkuchiki/parsetime"
 
 	ktail "github.com/fujiwara/kinesis-tailf"
@@ -32,7 +33,7 @@ func _main() error {
 	flag.StringVar(&region, "region", os.Getenv("AWS_REGION"), "region")
 	flag.StringVar(&start, "start", "", "start timestamp")
 	flag.StringVar(&end, "end", "", "end timestamp")
-	flag.Parse()
+	didumean.Parse()
 
 	if streamName == "" {
 		fmt.Fprintln(os.Stderr, "Usage of kinesis-tailf:")
@@ -71,7 +72,7 @@ func parseTimestamp(s string) (time.Time, error) {
 	}
 	p, _ := parsetime.NewParseTime()
 	if ts, err := p.Parse(s); err != nil {
-		return time.Time{}, fmt.Errorf("can't parse timestamp %s %s\n", s, err)
+		return time.Time{}, fmt.Errorf("can't parse timestamp %s %s", s, err)
 	} else {
 		return ts, nil
 	}
