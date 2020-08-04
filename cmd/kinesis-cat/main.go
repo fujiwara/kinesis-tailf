@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -53,13 +54,17 @@ func _main() error {
 		return app.Cat(ctx, partitionKey, os.Stdin)
 	}
 	for _, f := range flag.Args() {
-		src, err := os.Open(f)
-		if err != nil {
+		var src io.ReadCloser
+		var err error
+		if f == "-" {
+			src = os.Stdin
+		} else if src, err = os.Open(f); err != nil {
 			return err
 		}
 		if err := app.Cat(ctx, partitionKey, src); err != nil {
 			return err
 		}
+		src.Close()
 	}
 	return nil
 }
