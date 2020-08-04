@@ -41,10 +41,12 @@ kinesis-tailf supports decoding packed records by Kinesis Producer Library (KPL)
 
 ## kinesis-cat
 
-cat command for putting data to Amazon Kinesis Data Streams.
+cat command for putting data to Amazon Kinesis Data Streams or Kinesis Data Firehose.
 
 ```
 Usage of kinesis-cat:
+  -firehose
+    	put to Firehose delivery stream
   -lf
     	append LF(\n) to each record
   -partition-key string

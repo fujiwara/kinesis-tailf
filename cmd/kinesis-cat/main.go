@@ -23,12 +23,13 @@ func main() {
 
 func _main() error {
 	var region, streamName, partitionKey string
-	var appendLF bool
+	var appendLF, firehose bool
 
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
 	flag.StringVar(&partitionKey, "partition-key", "", "partition key")
 	flag.StringVar(&region, "region", os.Getenv("AWS_REGION"), "region")
+	flag.BoolVar(&firehose, "firehose", false, "put to Firehose delivery stream")
 	didumean.Parse()
 
 	if streamName == "" {
@@ -50,8 +51,12 @@ func _main() error {
 	app := ktail.New(sess, streamName)
 	app.AppendLF = appendLF
 
+	fn := app.Cat
+	if firehose {
+		fn = app.CatFirehose
+	}
 	if len(flag.Args()) == 0 {
-		return app.Cat(ctx, partitionKey, os.Stdin)
+		return fn(ctx, partitionKey, os.Stdin)
 	}
 	for _, f := range flag.Args() {
 		var src io.ReadCloser
@@ -61,7 +66,7 @@ func _main() error {
 		} else if src, err = os.Open(f); err != nil {
 			return err
 		}
-		if err := app.Cat(ctx, partitionKey, src); err != nil {
+		if err := fn(ctx, partitionKey, src); err != nil {
 			return err
 		}
 		src.Close()

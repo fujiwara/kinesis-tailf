@@ -36,6 +36,7 @@ type timeOverFunc func(time.Time) bool
 
 type App struct {
 	kinesis    *kinesis.Kinesis
+	sess       *session.Session
 	StreamName string
 	AppendLF   bool
 }
@@ -43,6 +44,7 @@ type App struct {
 func New(sess *session.Session, name string) *App {
 	return &App{
 		kinesis:    kinesis.New(sess),
+		sess:       sess,
 		StreamName: name,
 	}
 }
