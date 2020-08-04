@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,6 +25,7 @@ func main() {
 func _main() error {
 	var region, streamName, partitionKey string
 	var appendLF bool
+	var src io.Reader
 
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
@@ -45,8 +48,20 @@ func _main() error {
 		sess = session.New()
 	}
 
+	switch len(flag.Args()) {
+	case 0:
+		src = os.Stdin
+	case 1:
+		var err error
+		if src, err = os.Open(flag.Args()[0]); err != nil {
+			return err
+		}
+	default:
+		return errors.New("file arguments must be one")
+	}
+
 	ctx := context.Background()
 	app := ktail.New(sess, streamName)
 	app.AppendLF = appendLF
-	return app.Cat(ctx, partitionKey, os.Stdin)
+	return app.Cat(ctx, partitionKey, src)
 }
