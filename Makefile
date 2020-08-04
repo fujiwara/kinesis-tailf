@@ -1,17 +1,22 @@
 GIT_VER := $(shell git describe --tags)
 DATE := $(shell date +%Y-%m-%dT%H:%M:%S%z)
 
-.PHONY: test install clean
+.PHONY: test install clean all
 
-cmd/kinesis-tailf/kinesis-tailf: *.go cmd/kinesis-tailf/*.go
+all: cmd/kinesis-tailf/kinesis-tailf cmd/kinesis-cat/kinesis-cat
+
+cmd/kinesis-tailf/kinesis-tailf: *.go cmd/kinesis-tailf/*.go go.*
 	cd cmd/kinesis-tailf && go build -ldflags "-s -w -X main.version=${GIT_VER} -X main.buildDate=${DATE}" -gcflags="-trimpath=${PWD}"
 
-install: cmd/kinesis-tailf/kinesis-tailf
-	install cmd/kinesis-tailf/kinesis-tailf ${GOPATH}/bin
+cmd/kinesis-cat/kinesis-cat: *.go cmd/kinesis-cat/*.go go.*
+	cd cmd/kinesis-cat && go build -ldflags "-s -w -X main.version=${GIT_VER} -X main.buildDate=${DATE}" -gcflags="-trimpath=${PWD}"
+
+install: cmd/kinesis-tailf/kinesis-tailf cmd/kinesis-cat/kinesis-cat
+	install cmd/kinesis-tailf/kinesis-tailf cmd/kinesis-cat/kinesis-cat ${GOPATH}/bin
 
 test:
 	go test -race ./...
 
 clean:
-	rm -f cmd/kinesis-tailf/kinesis-tailf
+	rm -f cmd/kinesis-tailf/kinesis-tailf cmd/kinesis-cat/kinesis-cat
 	rm -f pkg/*

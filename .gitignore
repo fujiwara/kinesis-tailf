@@ -34,3 +34,5 @@ _testmain.go
 vendor/
 
 cmd/kinesis-tailf/kinesis-tailf
+cmd/kinesis-cat/kinesis-cat
+
