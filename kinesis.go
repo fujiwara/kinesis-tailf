@@ -84,6 +84,8 @@ func (app *App) Run(ctx context.Context, shardKey string, startTs, endTs time.Ti
 }
 
 func (app *App) iterate(p IterateParams, ch chan []byte) error {
+	requireARecord := false
+
 	in := &kinesis.GetShardIteratorInput{
 		ShardId:    aws.String(p.ShardID),
 		StreamName: aws.String(app.StreamName),
@@ -93,6 +95,7 @@ func (app *App) iterate(p IterateParams, ch chan []byte) error {
 	} else {
 		in.ShardIteratorType = aws.String("AT_TIMESTAMP")
 		in.Timestamp = &(p.StartTimestamp)
+		requireARecord = true
 	}
 
 	var isTimeOver timeOverFunc
@@ -121,6 +124,7 @@ func (app *App) iterate(p IterateParams, ch chan []byte) error {
 		}
 		itr = rr.NextShardIterator
 		for _, record := range rr.Records {
+			requireARecord = false
 			if isTimeOver(*record.ApproximateArrivalTimestamp) {
 				return nil
 			}
@@ -133,7 +137,7 @@ func (app *App) iterate(p IterateParams, ch chan []byte) error {
 				ch <- record.Data
 			}
 		}
-		if len(rr.Records) == 0 {
+		if len(rr.Records) == 0 && !requireARecord {
 			if isTimeOver(time.Now()) {
 				return nil
 			}
