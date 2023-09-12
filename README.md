@@ -1,6 +1,6 @@
 # kinesis-tailf
 
-tail -f command for Amazon Kinesis.
+tail -f command for Amazon Kinesis Data Streams.
 
 ## Install
 
@@ -39,7 +39,26 @@ Usage of kinesis-tailf:
 
 kinesis-tailf supports decoding packed records by Kinesis Producer Library (KPL).
 
+## kinesis-cat
+
+cat command for putting data to Amazon Kinesis Data Streams or Kinesis Data Firehose.
+
+```
+Usage of kinesis-cat:
+  -firehose
+    	put to Firehose delivery stream
+  -lf
+    	append LF(\n) to each record
+  -partition-key string
+    	partition key
+  -region string
+    	region (default "ap-northeast-1")
+  -stream string
+    	stream name
+```
+
+When -partition-key is not specified, partition key will be generated from sha256 digest of data.
+
 ## Licence
 
 MIT
-

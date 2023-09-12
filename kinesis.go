@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	flushInterval   = 100 * time.Millisecond
-	iterateInterval = time.Second
-	LF              = []byte{'\n'}
+	flushInterval    = 100 * time.Millisecond
+	iterateInterval  = time.Second
+	LF               = []byte{'\n'}
+	maxEmptyIterates = 100
 )
 
 type IterateParams struct {
@@ -30,12 +31,13 @@ type IterateParams struct {
 	EndTimestamp   time.Time
 }
 
-type timeOverFunc func(time.Time) bool
+type isOverFunc func(time.Time, ...bool) bool
 
-//go:generate protoc --go_out=plugins=kpl:kpl ./kpl.proto
+//go:generate protoc --go_out=kpl --go_opt=paths=source_relative ./kpl.proto
 
 type App struct {
 	kinesis    *kinesis.Client
+	cfg        aws.Config
 	StreamName string
 	AppendLF   bool
 }
@@ -43,6 +45,7 @@ type App struct {
 func New(cfg aws.Config, name string) *App {
 	return &App{
 		kinesis:    kinesis.NewFromConfig(cfg),
+		cfg:        cfg,
 		StreamName: name,
 	}
 }
@@ -93,13 +96,18 @@ func (app *App) iterate(ctx context.Context, p IterateParams, ch chan []byte) er
 		in.Timestamp = &(p.StartTimestamp)
 	}
 
-	var isTimeOver timeOverFunc
+	var isOver isOverFunc
+	var emptyHits int
 	if p.EndTimestamp.IsZero() {
-		isTimeOver = func(t time.Time) bool {
+		isOver = func(_ time.Time, _ ...bool) bool {
 			return false
 		}
 	} else {
-		isTimeOver = func(t time.Time) bool {
+		isOver = func(t time.Time, empty ...bool) bool {
+			if len(empty) > 0 && empty[0] {
+				emptyHits++
+				return maxEmptyIterates <= emptyHits
+			}
 			return p.EndTimestamp.Before(t)
 		}
 	}
@@ -119,7 +127,7 @@ func (app *App) iterate(ctx context.Context, p IterateParams, ch chan []byte) er
 		}
 		itr = rr.NextShardIterator
 		for _, record := range rr.Records {
-			if isTimeOver(*record.ApproximateArrivalTimestamp) {
+			if isOver(*record.ApproximateArrivalTimestamp) {
 				return nil
 			}
 			ar, err := kpl.Unmarshal(record.Data)
@@ -132,7 +140,7 @@ func (app *App) iterate(ctx context.Context, p IterateParams, ch chan []byte) er
 			}
 		}
 		if len(rr.Records) == 0 {
-			if isTimeOver(time.Now()) {
+			if isOver(time.Now(), true) {
 				return nil
 			}
 			time.Sleep(iterateInterval)
@@ -148,11 +156,11 @@ func (app *App) writer(ctx context.Context, ch chan []byte, wg *sync.WaitGroup) 
 	defer w.Flush()
 
 	// run periodical flusher
+	ticker := time.NewTicker(flushInterval)
 	go func() {
-		c := time.Tick(flushInterval)
 		for {
 			select {
-			case <-c:
+			case <-ticker.C:
 				mu.Lock()
 				w.Flush()
 				mu.Unlock()
