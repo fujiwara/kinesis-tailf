@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
 	"log"
@@ -8,9 +9,9 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"github.com/fujiwara/kinesis-tailf/kpl"
 )
 
@@ -37,13 +38,17 @@ type KinesisEvent struct {
 }
 
 var (
-	ksv        *kinesis.Kinesis
+	ksv        *kinesis.Client
 	streamName *string
 	matcher    *regexp.Regexp
 )
 
 func init() {
-	ksv = kinesis.New(session.New())
+	awsCfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	ksv = kinesis.NewFromConfig(awsCfg)
 	streamName = aws.String(os.Getenv("STREAM_NAME"))
 	matcher = regexp.MustCompile(os.Getenv("MATCH"))
 	log.Printf("streamName:%s matcher:%s", *streamName, matcher)
@@ -53,7 +58,7 @@ func main() {
 	lambda.Start(proceess)
 }
 
-func proceess(e KinesisEvent) error {
+func proceess(ctx context.Context, e KinesisEvent) error {
 	if len(e.Records) == 0 {
 		return nil
 	}
@@ -68,7 +73,7 @@ func proceess(e KinesisEvent) error {
 			count++
 			if matcher.Match(data) {
 				match++
-				result, err = push(result, data)
+				result, err = push(ctx, result, data)
 				if err != nil {
 					return err
 				}
@@ -79,7 +84,7 @@ func proceess(e KinesisEvent) error {
 			count++
 			if matcher.Match(r.Data) {
 				match++
-				result, err = push(result, r.Data)
+				result, err = push(ctx, result, r.Data)
 				if err != nil {
 					return err
 				}
@@ -94,12 +99,12 @@ func proceess(e KinesisEvent) error {
 	if len(result) == 0 {
 		return nil
 	}
-	return flush(result)
+	return flush(ctx, result)
 }
 
-func push(b, a []byte) ([]byte, error) {
+func push(ctx context.Context, b, a []byte) ([]byte, error) {
 	if len(b)+len(a)+1 >= MaxMessageSize {
-		if err := flush(b); err != nil {
+		if err := flush(ctx, b); err != nil {
 			return b, err
 		}
 		b = make([]byte, 0, BufferSize)
@@ -109,10 +114,10 @@ func push(b, a []byte) ([]byte, error) {
 	return b, nil
 }
 
-func flush(b []byte) error {
+func flush(ctx context.Context, b []byte) error {
 	key := fmt.Sprintf("%x", md5.Sum(b))
 	log.Printf("putRecord to %s size:%d partitionKey:%s", *streamName, len(b), key)
-	_, err := ksv.PutRecord(&kinesis.PutRecordInput{
+	_, err := ksv.PutRecord(ctx, &kinesis.PutRecordInput{
 		Data:         b,
 		PartitionKey: aws.String(key),
 		StreamName:   streamName,
