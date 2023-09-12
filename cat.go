@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/aws/aws-sdk-go/service/firehose"
-	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/service/firehose"
+	"github.com/aws/aws-sdk-go-v2/service/firehose/types"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 )
 
 func (app *App) Cat(ctx context.Context, partitionKey string, src io.Reader) error {
@@ -28,7 +29,7 @@ func (app *App) Cat(ctx context.Context, partitionKey string, src io.Reader) err
 		} else {
 			in.PartitionKey = &partitionKey
 		}
-		if _, err := app.kinesis.PutRecord(in); err != nil {
+		if _, err := app.kinesis.PutRecord(ctx, in); err != nil {
 			return err
 		}
 	}
@@ -39,7 +40,7 @@ func (app *App) Cat(ctx context.Context, partitionKey string, src io.Reader) err
 }
 
 func (app *App) CatFirehose(ctx context.Context, _ string, src io.Reader) error {
-	fh := firehose.New(app.sess)
+	fh := firehose.NewFromConfig(app.cfg)
 	scanner := bufio.NewScanner(src)
 	for scanner.Scan() {
 		b := scanner.Bytes()
@@ -47,12 +48,12 @@ func (app *App) CatFirehose(ctx context.Context, _ string, src io.Reader) error 
 			b = append(b, LF...)
 		}
 		in := &firehose.PutRecordInput{
-			Record: &firehose.Record{
+			Record: &types.Record{
 				Data: b,
 			},
 			DeliveryStreamName: &app.StreamName,
 		}
-		if _, err := fh.PutRecord(in); err != nil {
+		if _, err := fh.PutRecord(ctx, in); err != nil {
 			return err
 		}
 	}
