@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 
 	"github.com/fujiwara/kinesis-tailf/kpl"
 )
@@ -36,22 +36,22 @@ type isOverFunc func(time.Time, ...bool) bool
 //go:generate protoc --go_out=kpl --go_opt=paths=source_relative ./kpl.proto
 
 type App struct {
-	kinesis    *kinesis.Kinesis
-	sess       *session.Session
+	kinesis    *kinesis.Client
+	cfg        aws.Config
 	StreamName string
 	AppendLF   bool
 }
 
-func New(sess *session.Session, name string) *App {
+func New(cfg aws.Config, name string) *App {
 	return &App{
-		kinesis:    kinesis.New(sess),
-		sess:       sess,
+		kinesis:    kinesis.NewFromConfig(cfg),
+		cfg:        cfg,
 		StreamName: name,
 	}
 }
 
 func (app *App) Run(ctx context.Context, shardKey string, startTs, endTs time.Time) error {
-	shardIds, err := app.determinShardIds(shardKey)
+	shardIds, err := app.determinShardIds(ctx, shardKey)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (app *App) Run(ctx context.Context, shardKey string, startTs, endTs time.Ti
 				StartTimestamp: startTs,
 				EndTimestamp:   endTs,
 			}
-			err := app.iterate(param, ch)
+			err := app.iterate(ctx, param, ch)
 			if err != nil {
 				log.Println(err)
 			}
@@ -84,15 +84,15 @@ func (app *App) Run(ctx context.Context, shardKey string, startTs, endTs time.Ti
 	return nil
 }
 
-func (app *App) iterate(p IterateParams, ch chan []byte) error {
+func (app *App) iterate(ctx context.Context, p IterateParams, ch chan []byte) error {
 	in := &kinesis.GetShardIteratorInput{
 		ShardId:    aws.String(p.ShardID),
 		StreamName: aws.String(app.StreamName),
 	}
 	if p.StartTimestamp.IsZero() {
-		in.ShardIteratorType = aws.String("LATEST")
+		in.ShardIteratorType = types.ShardIteratorTypeLatest
 	} else {
-		in.ShardIteratorType = aws.String("AT_TIMESTAMP")
+		in.ShardIteratorType = types.ShardIteratorTypeAtTimestamp
 		in.Timestamp = &(p.StartTimestamp)
 	}
 
@@ -112,14 +112,14 @@ func (app *App) iterate(p IterateParams, ch chan []byte) error {
 		}
 	}
 
-	r, err := app.kinesis.GetShardIterator(in)
+	r, err := app.kinesis.GetShardIterator(ctx, in)
 	if err != nil {
 		return err
 	}
 	itr := r.ShardIterator
 	for {
-		rr, err := app.kinesis.GetRecords(&kinesis.GetRecordsInput{
-			Limit:         aws.Int64(1000),
+		rr, err := app.kinesis.GetRecords(ctx, &kinesis.GetRecordsInput{
+			Limit:         aws.Int32(1000),
 			ShardIterator: itr,
 		})
 		if err != nil {
@@ -190,10 +190,10 @@ func toHashKey(s string) *big.Int {
 	return big.NewInt(0).SetBytes(b[:])
 }
 
-func (app *App) determinShardIds(shardKey string) ([]string, error) {
+func (app *App) determinShardIds(ctx context.Context, shardKey string) ([]string, error) {
 	var shardIds []string
 
-	sd, err := app.kinesis.DescribeStream(&kinesis.DescribeStreamInput{
+	sd, err := app.kinesis.DescribeStream(ctx, &kinesis.DescribeStreamInput{
 		StreamName: aws.String(app.StreamName),
 	})
 	if err != nil {

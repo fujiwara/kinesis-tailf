@@ -7,8 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/mashiike/didumean"
 	"github.com/tkuchiki/parsetime"
 
@@ -50,18 +49,18 @@ func _main() error {
 	if err != nil {
 		return err
 	}
+	ctx := context.Background()
 
-	var sess *session.Session
+	optFns := []func(*config.LoadOptions) error{}
 	if region != "" {
-		sess = session.New(
-			&aws.Config{Region: aws.String(region)},
-		)
-	} else {
-		sess = session.New()
+		optFns = append(optFns, config.WithRegion(region))
+	}
+	awsCfg, err := config.LoadDefaultConfig(ctx, optFns...)
+	if err != nil {
+		return err
 	}
 
-	ctx := context.Background()
-	app := ktail.New(sess, streamName)
+	app := ktail.New(awsCfg, streamName)
 	app.AppendLF = appendLF
 	return app.Run(ctx, shardKey, startTs, endTs)
 }

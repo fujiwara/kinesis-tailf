@@ -7,8 +7,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/mashiike/didumean"
 
 	ktail "github.com/fujiwara/kinesis-tailf"
@@ -38,17 +37,17 @@ func _main() error {
 		return nil
 	}
 
-	var sess *session.Session
+	ctx := context.Background()
+	optFns := []func(*config.LoadOptions) error{}
 	if region != "" {
-		sess = session.New(
-			&aws.Config{Region: aws.String(region)},
-		)
-	} else {
-		sess = session.New()
+		optFns = append(optFns, config.WithRegion(region))
+	}
+	awsCfg, err := config.LoadDefaultConfig(ctx, optFns...)
+	if err != nil {
+		return err
 	}
 
-	ctx := context.Background()
-	app := ktail.New(sess, streamName)
+	app := ktail.New(awsCfg, streamName)
 	app.AppendLF = appendLF
 
 	fn := app.Cat
