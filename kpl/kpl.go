@@ -5,7 +5,7 @@ import (
 	"crypto/md5"
 	"errors"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var (

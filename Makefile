@@ -20,3 +20,6 @@ test:
 clean:
 	rm -f cmd/kinesis-tailf/kinesis-tailf cmd/kinesis-cat/kinesis-cat
 	rm -f pkg/*
+
+gen:
+	protoc --go_out=paths=source_relative:kpl/ ./kpl.proto

@@ -1,6 +1,7 @@
 // https://github.com/awslabs/amazon-kinesis-producer/blob/master/aggregation-format.md
 
 syntax = "proto2";
+option go_package = "github.com/fujiwara/kinesis-tailf/kpl";
 
 message AggregatedRecord {
   repeated string partition_key_table     = 1;
