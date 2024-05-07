@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/md5"
 	"errors"
+	"fmt"
+	"hash/fnv"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -44,4 +46,34 @@ func Marshal(ar *AggregatedRecord) ([]byte, error) {
 	h.Write(packed)
 	b = append(b, h.Sum(nil)...)
 	return b, nil
+}
+
+func NewAggregatedRecord() *AggregatedRecord {
+	return &AggregatedRecord{}
+}
+
+func (ar *AggregatedRecord) AddData(data []byte, partitionKey string) {
+	r := &Record{
+		Data: data,
+	}
+	if partitionKey == "" {
+		h := fnv.New128()
+		h.Write(data)
+		partitionKey = fmt.Sprintf("%x", h.Sum(nil))
+	}
+	for i, k := range ar.PartitionKeyTable {
+		if k == partitionKey {
+			// partition key found
+			pi := uint64(i)
+			r.PartitionKeyIndex = &pi
+			break
+		}
+	}
+	// new partition key
+	if r.PartitionKeyIndex == nil {
+		ar.PartitionKeyTable = append(ar.PartitionKeyTable, partitionKey)
+		pi := uint64(len(ar.PartitionKeyTable) - 1)
+		r.PartitionKeyIndex = &pi
+	}
+	ar.Records = append(ar.Records, r)
 }
