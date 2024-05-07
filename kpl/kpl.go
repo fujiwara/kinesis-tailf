@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
-	"hash/fnv"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -57,7 +56,7 @@ func (ar *AggregatedRecord) AddData(data []byte, partitionKey string) {
 		Data: data,
 	}
 	if partitionKey == "" {
-		h := fnv.New128()
+		h := md5.New()
 		h.Write(data)
 		partitionKey = fmt.Sprintf("%x", h.Sum(nil))
 	}
