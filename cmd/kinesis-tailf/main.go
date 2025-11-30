@@ -25,6 +25,7 @@ func _main() error {
 	var region, streamName, shardKey, start, end string
 	var startTs, endTs time.Time
 	var appendLF bool
+	var showVersion bool
 
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
@@ -32,7 +33,13 @@ func _main() error {
 	flag.StringVar(&region, "region", os.Getenv("AWS_REGION"), "region")
 	flag.StringVar(&start, "start", "", "start timestamp")
 	flag.StringVar(&end, "end", "", "end timestamp")
+	flag.BoolVar(&showVersion, "version", false, "show version")
 	didumean.Parse()
+
+	if showVersion {
+		fmt.Println(ktail.Version)
+		return nil
+	}
 
 	if streamName == "" {
 		fmt.Fprintln(os.Stderr, "Usage of kinesis-tailf:")

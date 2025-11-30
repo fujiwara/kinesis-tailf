@@ -23,13 +23,20 @@ func main() {
 func _main() error {
 	var region, streamName, partitionKey string
 	var appendLF, firehose bool
+	var showVersion bool
 
 	flag.BoolVar(&appendLF, "lf", false, "append LF(\\n) to each record")
 	flag.StringVar(&streamName, "stream", "", "stream name")
 	flag.StringVar(&partitionKey, "partition-key", "", "partition key")
 	flag.StringVar(&region, "region", os.Getenv("AWS_REGION"), "region")
 	flag.BoolVar(&firehose, "firehose", false, "put to Firehose delivery stream")
+	flag.BoolVar(&showVersion, "version", false, "show version")
 	didumean.Parse()
+
+	if showVersion {
+		fmt.Println(ktail.Version)
+		return nil
+	}
 
 	if streamName == "" {
 		fmt.Fprintln(os.Stderr, "Usage of kinesis-cat:")
