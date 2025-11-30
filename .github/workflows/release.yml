@@ -17,10 +17,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: Songmu/tagpr@9c294c8b7b1815a5f3b7c61d6ee6aa50ac25b030 # v1
+        id: tagpr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Go
         uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6
         with:
           go-version: "1.25"
+        if: ${{ steps.tagpr.outputs.tag != '' }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
@@ -28,3 +33,4 @@ jobs:
           args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ steps.tagpr.outputs.tag != '' }}
