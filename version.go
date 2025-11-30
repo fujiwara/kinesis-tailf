@@ -1,3 +1,3 @@
 package ktail
 
-var Version = "v0.5.0"
+var Version = "v0.5.1"
